@@ -11,7 +11,7 @@ def train_one_epoch(model, data_loader, device, epoch, writer):
     #     print(i)
     #
     for i, (images, lidar, targets, cal) in enumerate(data_loader):
-        if i < 432:
+        if i < 436:
             continue
         # print('error?!!!!!!!!!!!!!!!!!')
         print("@@@@@@@@@[Epoch] : ", i)

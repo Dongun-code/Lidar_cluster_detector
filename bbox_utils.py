@@ -122,7 +122,6 @@ class cls_bbox:
 
         negative_select_img = negative_images[: negative_len]
         negative_select_label = negative_labels[: negative_len]
-        negative_bboxes.append(pred_bboxes[i])
         negative_select_bbox = negative_bboxes[: negative_len]
         negative_select_gtlabel = negative_gt_labels[: negative_len]
 
@@ -227,7 +226,6 @@ class cls_bbox:
     def bbox_reg_batch(self, gt_labels, pred_bbox, gt_bbox, device):
         gt_boxes = []
 
-
         false_bbox = torch.tensor([0.0, 0.0, 0.0, 0.0]).to(device)
         for gt_label in gt_labels:
             index = int(gt_label - 1)
@@ -242,7 +240,7 @@ class cls_bbox:
         gt_mask = torch.sum(gt_bboxes, 1).reshape((-1, 1))
         gt_mask = gt_mask.to('cpu')
         replace_value = torch.tensor(1., dtype=torch.float32)
-        gt_mask= torch.where(gt_mask > 0., 1., 0.).to(device)
+        gt_mask = torch.where(gt_mask > 0., 1., 0.).to(device)
 
         return pred_bboxes, gt_bboxes, gt_mask
 

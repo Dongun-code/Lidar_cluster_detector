@@ -112,12 +112,12 @@ class trainBBox:
                 bbox_loss.backward()
                 self.optimizer.step()
 
-                torch.save({
-                    'model_state_dict': self.model.state_dict(),
-                    'optimizer_state_dict': self.optimizer.state_dict(),
-                    'loss': bbox_loss,
-                    'epoch': epoch,
-                },  self.pt_name)
+                # torch.save({
+                #     'model_state_dict': self.model.state_dict(),
+                #     'optimizer_state_dict': self.optimizer.state_dict(),
+                #     'loss': bbox_loss,
+                #     'epoch': epoch,
+                # },  self.pt_name)
 
 
 if __name__ == '__main__':
