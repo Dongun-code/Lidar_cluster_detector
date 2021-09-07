@@ -7,9 +7,10 @@ from torchvision import transforms
 
 
 class Propose_region(torch.utils.data.Dataset):
-    def __init__(self, img_set, labels, transform):
+    def __init__(self, img_set, labels, target_bbox, transform):
         self.img_set = img_set
         self.labels = labels
+        self.target_bbox = target_bbox
         self.transform = transform
         self.toTensor = transforms.ToTensor()
 
@@ -38,6 +39,7 @@ class Propose_region(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img = self.img_set[idx]
         labels = self.labels[idx]
+        target_bbox = self.target_bbox[idx]
         # print('proposal :', img)
         img_shape = np.array(img).shape
 
@@ -48,7 +50,7 @@ class Propose_region(torch.utils.data.Dataset):
         img = self.fill_padding(img)
         img = self.transform(img)
 
-        return img, labels
+        return img, labels, target_bbox
 
     def __len__(self):
         return len(self.img_set)

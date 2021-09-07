@@ -28,19 +28,14 @@ class VGG16_bn(nn.Module):
 
     def forward(self, images, labels=None):
 
-        # print('img:',images.shape)
-        # print('labels:', labels.shape)
-        # print(labels)
         x = self.features(images)
         # print('x:', x.shape)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        # print('x:', x.shape)
+
         x = self.classfication(x)
-        # print(self.classfication)
-        # print(labels)
         cls_score = self.class_score(x)
-        # print(cls_score)
+
         # target = torch.LongTensor([0]).to(labels.device)
         cls_loss = self.loss_function(cls_score, labels)
         # print('cls_loss : ', cls_loss)

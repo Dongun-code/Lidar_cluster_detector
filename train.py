@@ -5,6 +5,7 @@ from torch.nn import parameter
 from config import Config as cfg
 # from model.detection.engine import train_one_epoch, evaluate
 from Lidar_cluster_Rcnn import Lidar_cluster_Rcnn
+from bbox_train import trainBBox
 import torch
 # from load_data.kitti_loader import kitti_set
 from load_data.kitti_loader_colab import kitti_set
@@ -74,20 +75,8 @@ def main():
     weight_decay_ = 0.0001
     # device = 'cuda'
     # model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
-    model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
-    # params = [p for p in model.parameters() if p.requires_grad]
-    # print(params)
-    # # print("parameter : ", params)
-    # optimizer = torch.optim.SGD(
-    #     params, lr=lr_temp, weight_decay= weight_decay_
-    # )
-    # # optimizer = torch.optim.Adadelta(
-    # #     params, lr=lr_temp, weight_decay= weight_decay_
-    # # )    
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-    #                                                 step_size=3,
-    #                                                 gamma=0.1)
-    # model.train()
+    # model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
+    reg_model = trainBBox(device, lr_temp, weight_decay_)
 
     start_epoch = 0
     end_epoch = 1
@@ -97,7 +86,7 @@ def main():
         tm_1 = time.time()
         print((f"@@@[Epoch] : {epoch + 1}"))
         # train_one_epoch(model, optimizer, d_train, device, epoch)
-        train_one_epoch(model, d_train, device, epoch, writer)
+        train_one_epoch(reg_model, d_train, device, epoch, writer)
         # print('model save')
 
     

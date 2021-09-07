@@ -5,8 +5,8 @@ from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn
-from model.bbox_regressor import bbox_regressor
-from bbox_utils import convert_xyxy_to_xywh
+from model.bbox_regressor import bboxRegressor
+
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
 from torchvision import transforms
