@@ -45,7 +45,8 @@ import numpy as np
 
 
 class Config:
-    SRCPATH = '/home/usr/dongun/Experiment_1/total_data'
+    # SRCPATH = '/home/usr/dongun/Experiment_1/total_data'
+    SRCPATH = '/media/milab/My Passport3/toV100/dongun/Experiment_1/total_data'
     # SRCPATH = '/home/user/hdd/datasets/kitti'
     # A2D2 = '/media/milab/My Passport3/toV100/A2D2/camera_lidar/20180810_150607'
     # A2IMG = op.join(A2D2,'camera')

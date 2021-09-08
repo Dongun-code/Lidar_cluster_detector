@@ -77,29 +77,26 @@ class trainBBox:
         return onehot
 
     # def forward(self, images, lidar, targets=None, cal=None, device=None, optimizer=None):
-    def __call__(self, images, lidar, targets=None, cal=None, device=None):
+    def __call__(self, images, lidar, targets=None, cal=None, device=None, epoch=None):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
         images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
-        images, labels, target_bbox, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
-        epoch_standard = 0
-        running_loss = 0.0
 
-        if check > 3:
+        if check > 3 or len(images) != 0:
+            images, labels, target_bbox, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
             select_region = Propose_region(images, labels, target_bbox, self.transform)
             dataset = torch.utils.data.DataLoader(select_region, batch_size=6,
                                                   shuffle=True, num_workers=0,
                                                   collate_fn=collate_fn)
-            # self.lr_scheduler.step()
-            # print('lr_schedular:', )
+            self.lr_scheduler.step()
+            print('lr_schedular:', )
             for epoch, (images, labels, target_bbox) in enumerate(dataset):
                 if label_len == 1:
                     # print('@@@@@@@@@@@@@ only one!')
                     continue
                 self.model.train()
-
                 images, labels, target_bboxes = self.toTensor(images, labels, target_bbox, device)
+
                 if len(target_bboxes) == 0:
-                    
                     print("BBoxes is None")
                     continue
 
@@ -110,7 +107,7 @@ class trainBBox:
                     exit(1)
 
                 if epoch % 3 == 0:
-                    print('cls_loss : ', bbox_loss, 'labels : ', labels)
+                    print('bbox_loss : ', bbox_loss, 'labels : ', labels)
 
                 self.running_loss += bbox_loss.item()
                 if self.epoch_standard % 100 == 0:
