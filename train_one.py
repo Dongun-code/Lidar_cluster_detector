@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 
-def train_one_epoch(model, data_loader, device, epoch, writer):
+def train_one_epoch(model, data_loader, device, epoch, mode):
     # for p in optimizer.param_groups:
         # p['lr'] - 
     # print('train one epoch!')
@@ -17,7 +17,6 @@ def train_one_epoch(model, data_loader, device, epoch, writer):
         # print('error?!!!!!!!!!!!!!!!!!')
         print("@@@@@@@@@[Epoch] : ", i)
 
-        # model.train()
         num_iters = epoch * len(data_loader) + i
         # images = images[0].to(device)
         images = images[0]
@@ -25,7 +24,7 @@ def train_one_epoch(model, data_loader, device, epoch, writer):
         cal = cal[0]
 
         targets = {k: v.to(device) for k, v in targets[0].items()}
-        loss = model(images, lidar, targets, cal, device, i)
+        loss = model(images, lidar, targets, cal, device, i, mode)
         # loss_list.append(loss)
      
     # loss_list_n = np.array(loss_list)

@@ -29,14 +29,13 @@ class kitti_set(torch.utils.data.Dataset):
         # self.VELOPATH = op.join(path, 'velo', split, 'velodyne')
         # self.IMGPATH = op.join(path,'img', split, 'image_2')
         # self.LABELPATH = op.join(path, 'label_2')
-        self.VELOPATH = cfg.VELOPATH
-        self.IMGPATH = cfg.IMGPATH
-        self.LABELPATH = cfg.LABELPATH
-        self.CALPATH = cfg.CALPATH
+        self.VELOPATH = op.join(cfg.SRCPATH, 'velo', split, 'velodyne')
+        self.IMGPATH = op.join(cfg.SRCPATH, 'img', split, 'image_2')
+        self.LABELPATH = op.join(cfg.SRCPATH, 'label_2')
+        self.CALPATH = op.join(cfg.SRCPATH, 'calibration', split, 'calib')
         self.use_label = cfg.Train_set.use_label
         self.file_list = self.check_file_num()
-    # def label_preprocess(self, idx):
-    #     pass
+
 
     def load_gt_bbox(self, path):
         with open(path, 'r') as r:

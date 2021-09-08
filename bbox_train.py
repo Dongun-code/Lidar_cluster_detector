@@ -77,11 +77,16 @@ class trainBBox:
         return onehot
 
     # def forward(self, images, lidar, targets=None, cal=None, device=None, optimizer=None):
-    def __call__(self, images, lidar, targets=None, cal=None, device=None, epoch=None):
+    def __call__(self, images, lidar, targets=None, cal=None, device=None, epoch=None, mode='train'):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
         images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
 
         if check > 3 or len(images) != 0:
+            if mode == 'train':
+                self.model.train()
+            elif mode == 'test':
+                self.model.eval()
+
             images, labels, target_bbox, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
             select_region = Propose_region(images, labels, target_bbox, self.transform)
             dataset = torch.utils.data.DataLoader(select_region, batch_size=6,
@@ -93,7 +98,7 @@ class trainBBox:
                 if label_len == 1:
                     # print('@@@@@@@@@@@@@ only one!')
                     continue
-                self.model.train()
+
                 images, labels, target_bboxes = self.toTensor(images, labels, target_bbox, device)
 
                 if len(target_bboxes) == 0:

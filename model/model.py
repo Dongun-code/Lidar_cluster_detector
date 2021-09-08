@@ -40,12 +40,7 @@ class VGG16_bn(nn.Module):
         cls_loss = self.loss_function(cls_score, labels)
         # print('cls_loss : ', cls_loss)
 
-            
-            # cls_loss.backward()
-            # opt.step()
-            # opt.zero_grad
-            # print(torch.max(cls_score))
-            # print(cls_score)
+
         return cls_loss
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ from kitti_util import Calibration
 from transformation import Transformation
 from torchvision import transforms
 
+
 # import torch
 
 
@@ -18,16 +19,16 @@ class LidarCluster:
     def projection_img(self, images, pcd, cal, labels):
         # file = '{0:06d}.png' .format(index)
         pts = np.asarray(pcd.points)
-        bottom =  np.ones((pts.shape[0],1))
+        bottom = np.ones((pts.shape[0], 1))
 
         pts = np.concatenate((pts, bottom), axis=1)
 
         V2C = cal.V2C
-        v2c = np.vstack((V2C, [0,0,0,1]))
+        v2c = np.vstack((V2C, [0, 0, 0, 1]))
 
         pts_c = np.dot(v2c, pts.T)
         pts_v = pts_c[:3, :]
-        cal.P = cal.P[:3,:3]
+        cal.P = cal.P[:3, :3]
 
         projection = np.dot(cal.P, pts_v)
         projection = projection / projection[2, :]
@@ -43,13 +44,13 @@ class LidarCluster:
 
         img_n = np.array(img)
 
-        zeros = np.zeros((img_shape[0],img_shape[1]))
+        zeros = np.zeros((img_shape[0], img_shape[1]))
         # print(zeros.shape)
         for i in (range(proj.shape[1])):
             x = int(proj[0][i])
             y = int(proj[1][i])
             # print(x,y)
-            if (0<y <img_shape[0]) and (0<x<img_shape[1]):
+            if (0 < y < img_shape[0]) and (0 < x < img_shape[1]):
                 zeros[y, x] = labels[i]
         zeros = zeros * 10
 
@@ -59,7 +60,7 @@ class LidarCluster:
         images = []
         for i in index:
             if i > 0:
-                black = np.zeros((img_n.shape[0],img_n.shape[1]))
+                black = np.zeros((img_n.shape[0], img_n.shape[1]))
                 # print('unique index:', index)
                 split_index = np.where(zeros == i)
                 # tf224 = Transformation(224)    
@@ -67,13 +68,13 @@ class LidarCluster:
                 for (a, b, c, d) in resize_list:
                     cluster_target = {}
 
-                    y1, x1, y2, x2 = np.min(split_index[0]) + a, np.min(split_index[1]) + b, np.max(split_index[0]) + c, np.max(split_index[1]) + d
+                    y1, x1, y2, x2 = np.min(split_index[0]) + a, np.min(split_index[1]) + b, np.max(
+                        split_index[0]) + c, np.max(split_index[1]) + d
                     crop_axis_x = np.array([x1, x2])
                     crop_axis_y = np.array([y1, y2])
                     crop_axis_x = np.clip(crop_axis_x, 0, img_n.shape[1])
                     crop_axis_y = np.clip(crop_axis_y, 0, img_n.shape[0])
                     crop_axis = np.array([crop_axis_x[0], crop_axis_y[0], crop_axis_x[1], crop_axis_y[1]])
-                    # print('crop axis : ' , crop_axis)
                     crop_img = img.crop((crop_axis))
                     # img = np.array(img)
                     # crop_img = img[crop_axis[0]:crop_axis[2], crop_axis[1]:crop_axis[3],: ]
@@ -90,13 +91,12 @@ class LidarCluster:
                     #     bboxes.append([crop_axis])
                     # except:
                     #     continue
-                    if (crop_img.size[0] != 0) and  (crop_img.size[1] != 0):
+                    if (crop_img.size[0] != 0) and (crop_img.size[1] != 0):
                         # image = tf224(crop_img)
                         # plt.imshow(crop_img)
                         # plt.show()
                         images.append(crop_img)
                         bboxes.append([crop_axis])
-
 
                     # print('bbbb:', bboxes)
                     # select_region = Propose_region(images, bboxes)
@@ -104,30 +104,29 @@ class LidarCluster:
                     # plt.show()
         return images, bboxes
 
-
     def preprocess(self, points):
         x_range, y_range, z_range = (3, 30), (-15, 15), (-1.3, 2.5)
         # print(points.shape)
-        points1 = points[np.logical_and.reduce((points[:,0] > x_range[0], points[:,0] < x_range[1], \
-                                                    points[:,1] > y_range[0], points[:,1] < y_range[1], \
-                                                    points[:,2] > z_range[0], points[:,2] < z_range[1]))]
+        points1 = points[np.logical_and.reduce((points[:, 0] > x_range[0], points[:, 0] < x_range[1], \
+                                                points[:, 1] > y_range[0], points[:, 1] < y_range[1], \
+                                                points[:, 2] > z_range[0], points[:, 2] < z_range[1]))]
         # points[:,2 ] = 0
         x_range, y_range, z_range = (30, 60), (-15, 15), (-1.3, 2.5)
         # print(points.shape)
-        points2 = points[np.logical_and.reduce((points[:,0] > x_range[0], points[:,0] < x_range[1], \
-                                                    points[:,1] > y_range[0], points[:,1] < y_range[1], \
-                                                    points[:,2] > z_range[0], points[:,2] < z_range[1]))]
+        points2 = points[np.logical_and.reduce((points[:, 0] > x_range[0], points[:, 0] < x_range[1], \
+                                                points[:, 1] > y_range[0], points[:, 1] < y_range[1], \
+                                                points[:, 2] > z_range[0], points[:, 2] < z_range[1]))]
 
         eps_ = 10
         m_points = 20
         z_axis = points1[:, 2].copy() * 50
-        # print('z_axis:',z_axis)
+
         points1[:, 2] = 0
         points1 = points1 * 50
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points1)
         # pcd = pcd.voxel_down_sample(voxel_size=0.2)
-        pcd.paint_uniform_color([0.5, 0.5, 0.5])   
+        pcd.paint_uniform_color([0.5, 0.5, 0.5])
 
         with o3d.utility.VerbosityContextManager(
                 o3d.utility.VerbosityLevel.Debug) as cm:
@@ -142,11 +141,11 @@ class LidarCluster:
         # print('target:', target_pcd)
         point_list = []
         # print(labels.shape)
-        for i in range(0, labels.max()+1):
-            num = labels[ labels == i]
+        for i in range(0, labels.max() + 1):
+            num = labels[labels == i]
             # print(f'num: {i}', len(num)) 
             if (len(num) < 2500) or (i == 0):
-                target = target_pcd[ labels == i]
+                target = target_pcd[labels == i]
                 # print(target.shape)
                 point_list.extend(target)
 
@@ -154,7 +153,7 @@ class LidarCluster:
         m_points = 20
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(point_list)
-        pcd.paint_uniform_color([0.5, 0.5, 0.5])   
+        pcd.paint_uniform_color([0.5, 0.5, 0.5])
 
         with o3d.utility.VerbosityContextManager(
                 o3d.utility.VerbosityLevel.Debug) as cm:
@@ -168,21 +167,18 @@ class LidarCluster:
         colors1 = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
         colors1[labels < 0] = 0
 
-
         pcd.colors = o3d.utility.Vector3dVector(colors1[:, :3])
 
         return pcd, labels
 
     def view_points(self, pts):
-        # print('proj',proj.shape)
         # zeros = np.zeros((proj.shape[1])).reshape((1, -1))
         # pts = np.concatenate((proj, zeros), axis=0)
-        # print('pts:',pts.shape)
         pts = pts.T
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(pts)
         pcd = pcd.voxel_down_sample(voxel_size=0.9)
-        pcd.paint_uniform_color([0.5, 0.5, 0.5])   
+        pcd.paint_uniform_color([0.5, 0.5, 0.5])
         # print("bbox:", x)
         eps_ = 0.5
         m_points = 10
@@ -205,18 +201,17 @@ class LidarCluster:
         #                                 lookat=[2.4615, 2.1331, 1.338],
         #                                 up=[-0.1781, -0.9708, 0.1608])    
 
-    def __call__(self, images,lidar, targets, cal):
+    def __call__(self, images, lidar, targets, cal):
 
         points = lidar['points']
 
         pcd, labels = self.preprocess(points)
-        images, bboxes = self.projection_img(images, pcd, cal, labels)  
+        images, bboxes = self.projection_img(images, pcd, cal, labels)
         check = len(np.unique(labels))
         return images, bboxes, check
 
-
 # def main(index):
-    
+
 #     velo_index = '{0:06d}.bin' .format(index)
 #     cal_index = '{0:06d}.txt' .format(index) 
 #     cal_path = op.join(cfg.CALPATH, cal_index)
@@ -236,4 +231,3 @@ class LidarCluster:
 # if __name__ == "__main__":
 #     for index in range(200):
 #         main(index)
-
