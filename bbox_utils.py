@@ -173,8 +173,7 @@ class cls_bbox:
         t_y = t_y.reshape((-1, 1))
         t_w = t_w.reshape((-1, 1))
         t_h = t_h.reshape((-1, 1))
-        print(t_x)
-        print(t_h)
+
         # bbox_t = torch.tensor((t_x, t_y, t_w, t_h), dtype=torch.float32).to(device)
         bbox_t = torch.stack([t_x.T, t_y.T, t_w.T, t_h.T]).T.reshape(-1, 4)
         bbox_t = bbox_t * gt_mask
@@ -257,42 +256,6 @@ class cls_bbox:
         images, labels, target_bbox, label_len = self.set_Clslabel(images, ious, categories, pred_bboxes, gt_bboxes, gt_box_index, device)
 
         return images, labels, target_bbox, label_len
-#
-# def convert_xyxy_to_xywh(bbox_dataset, device):
-#
-#         trains = bbox_dataset['Train_box']
-#         targets = bbox_dataset['Target_box']
-#
-#         # Calculate x/y/w/h of P/G
-#         # predicted box width, height, centerX coord, centerY coord
-#         p_w = trains[:, 2] - trains[:, 0]
-#         p_h = trains[:, 1] - trains[:, 3]
-#         p_x = trains[:, 0] + p_w / 2
-#         p_y = trains[:, 1] + p_h / 2
-#
-#         # ground truth box width, height, center x , center y
-#         g_w = targets[:, 2] - targets[:, 0]
-#         g_h = targets[:, 1] - targets[:, 3]
-#         g_x = targets[:, 0] + g_w / 2
-#         g_y = targets[:, 1] + g_h / 2
-#
-#         t_x = (g_x - p_x) / p_w
-#         t_y = (g_y - p_y) / p_y
-#         t_w = torch.log(g_w / p_w)
-#         t_h = torch.log(g_h / p_h)
-#
-#         t_x = t_x.reshape((-1, 1))
-#         t_y = t_y.reshape((-1, 1))
-#         t_w = t_w.reshape((-1, 1))
-#         t_h = t_h.reshape((-1, 1))
-#         print(t_x)
-#         print(t_h)
-#         # bbox_t = torch.tensor((t_x, t_y, t_w, t_h), dtype=torch.float32).to(device)
-#         bbox_t = torch.stack([t_x.T, t_y.T, t_w.T, t_h.T]).T.reshape(-1, 4)
-#
-#         return bbox_t
-
-
 
 
 # if __name__ == '__main__':

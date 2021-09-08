@@ -28,6 +28,9 @@ class trainBBox:
     def __init__(self, device, lr_temp, weight_decay_):
         super().__init__()
         print("BBox Regressor Train")
+        self.epoch_standard = 0
+        self.running_loss = 0.0
+        self.final_loss_list = []
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
@@ -52,7 +55,7 @@ class trainBBox:
                                                             gamma=0.1)
 
         now = time.localtime()
-        self.pt_name = f"./result/vgg16_model_bbox_regressor_{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}"
+        self.pt_name = f"./result/vgg16_model_bbox_regressor_{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}"
 
 
     def toTensor(self, images, labels, target_bbox, device):
@@ -78,22 +81,25 @@ class trainBBox:
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
         images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
         images, labels, target_bbox, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
+        epoch_standard = 0
+        running_loss = 0.0
 
         if check > 3:
             select_region = Propose_region(images, labels, target_bbox, self.transform)
-            dataset = torch.utils.data.DataLoader(select_region, batch_size=2,
+            dataset = torch.utils.data.DataLoader(select_region, batch_size=6,
                                                   shuffle=True, num_workers=0,
                                                   collate_fn=collate_fn)
             # self.lr_scheduler.step()
             # print('lr_schedular:', )
             for epoch, (images, labels, target_bbox) in enumerate(dataset):
                 if label_len == 1:
-                    print('@@@@@@@@@@@@@ only one!')
+                    # print('@@@@@@@@@@@@@ only one!')
                     continue
                 self.model.train()
 
                 images, labels, target_bboxes = self.toTensor(images, labels, target_bbox, device)
                 if len(target_bboxes) == 0:
+                    
                     print("BBoxes is None")
                     continue
 
@@ -106,18 +112,28 @@ class trainBBox:
                 if epoch % 3 == 0:
                     print('cls_loss : ', bbox_loss, 'labels : ', labels)
 
-                    # writer.add_scalar('Cls_Loss',cls_loss, epoch )
+                self.running_loss += bbox_loss.item()
+                if self.epoch_standard % 100 == 0:
+                    print(f'@@@@[Training {self.epoch_standard} : {self.running_loss / 100}')
+                    self.final_loss_list.append(self.running_loss)
+                    self.running_loss = 0.0
+
+                #  writer.add_scalar('bbox_Loss', bbox_loss, epoch )
                 # cls_loss += cls_loss.item()
+
                 self.optimizer.zero_grad
                 bbox_loss.backward()
                 self.optimizer.step()
 
-                # torch.save({
-                #     'model_state_dict': self.model.state_dict(),
-                #     'optimizer_state_dict': self.optimizer.state_dict(),
-                #     'loss': bbox_loss,
-                #     'epoch': epoch,
-                # },  self.pt_name)
+                self.epoch_standard += 1
+
+                torch.save({
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'loss': bbox_loss,
+                    'epoch': epoch,
+                },  self.pt_name)
+
 
 
 if __name__ == '__main__':

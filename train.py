@@ -79,7 +79,7 @@ def main():
     reg_model = trainBBox(device, lr_temp, weight_decay_)
 
     start_epoch = 0
-    end_epoch = 1
+    end_epoch = 3
 
     for epoch in range(start_epoch, end_epoch):
         
@@ -89,7 +89,8 @@ def main():
         train_one_epoch(reg_model, d_train, device, epoch, writer)
         # print('model save')
 
-    
+    final_loss = reg_model.final_loss_list
+    np.save('./save_final_loss', final_loss)
 
 
 if __name__ == "__main__":
