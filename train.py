@@ -5,7 +5,6 @@ from torch.nn import parameter
 from config import Config as cfg
 # from model.detection.engine import train_one_epoch, evaluate
 from Lidar_cluster_Rcnn import Lidar_cluster_Rcnn
-from bbox_train import trainBBox
 import torch
 # from load_data.kitti_loader import kitti_set
 from load_data.kitti_loader_colab import kitti_set
@@ -69,28 +68,25 @@ def main():
 
 
     momentum = 0.9
-    # lr_temp = 0.02 * 1 / 16
-    # lr_temp = 0.0001
     lr_temp = 0.0001
     weight_decay_ = 0.0001
-    # device = 'cuda'
+
     # model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
-    # model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
-    reg_model = trainBBox(device, lr_temp, weight_decay_)
+    model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
+
 
     start_epoch = 0
-    end_epoch = 3
+    end_epoch = 1
 
     for epoch in range(start_epoch, end_epoch):
         
         tm_1 = time.time()
         print((f"@@@[Epoch] : {epoch + 1}"))
         # train_one_epoch(model, optimizer, d_train, device, epoch)
-        train_one_epoch(reg_model, d_train, device, epoch, writer)
+        train_one_epoch(model, d_train, device, epoch, writer)
         # print('model save')
 
-    final_loss = reg_model.final_loss_list
-    np.save('./save_final_loss', final_loss)
+    
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn
+from model.bbox_regressor import bbox_regressor
+from bbox_utils import convert_xyxy_to_xywh
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
 from torchvision import transforms
@@ -25,6 +27,9 @@ class Lidar_cluster_Rcnn():
     def __init__(self, device, lr_temp, weight_decay_) -> None:
         super().__init__()
         print("is it start only one??")
+        self.epoch_standard = 0
+        self.running_loss = 0.0
+        self.final_loss_list = []
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
@@ -35,10 +40,9 @@ class Lidar_cluster_Rcnn():
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
         params = [p for p in self.backbone.parameters() if p.requires_grad]
-        # print(params)
-        # print("parameter : ", params)
+
         self.optimizer = torch.optim.Adam(
-            params, lr=lr_temp, weight_decay= weight_decay_
+            params, lr = lr_temp, weight_decay = weight_decay_
         )
         # optimizer = torch.optim.Adadelta(
         #     params, lr=lr_temp, weight_decay= weight_decay_
@@ -47,11 +51,12 @@ class Lidar_cluster_Rcnn():
                                                         step_size=3,
                                                         gamma=0.1)
         now = time.localtime()
-        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_hour}_{now.tm_min}"
+        self.criterion = nn.CrossEntropyLoss()
+        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}.pt"
         # model.train()        
         # self.bbox_regressor = bbox_regressor().to(device)
 
-    def toTensor(self, images,labels, device):
+    def toTensor(self, images, labels, device):
         img = torch.stack(images).to(device)
         label = torch.stack(labels)
 
@@ -77,61 +82,69 @@ class Lidar_cluster_Rcnn():
     def __call__(self, images, lidar, targets=None, cal=None, device=None):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
         images, pred_bboxes, check = self.lidar(images,lidar, targets, cal)
-        print('check ? : ', check)
-        images, labels, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
-        # print('img, labels', len(images), len(labels))
-        # print(labels)
-        
+        images_, labels_, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
+        running_corrects = 0
+        running_loss = 0.0
+        data_len = 0
         if check > 3:
-            select_region = Propose_region(images, labels, self.transform)
+            select_region = Propose_region(images_, labels_, self.transform)
             if len(select_region) != 0:
-                dataset = torch.utils.data.DataLoader(select_region, batch_size=6,
+                dataset = torch.utils.data.DataLoader(select_region, batch_size=8,
                                                         shuffle=True, num_workers=0,
                                                         collate_fn=collate_fn)
+
+                data_size = len(dataset)
                 # self.lr_scheduler.step()
-                # print('oneoneone' )
                 for epoch, (images, labels) in enumerate(dataset):
                     if label_len == 1 :
                         print('@@@@@@@@@@@@@ only one!')
                         continue
                     self.backbone.train()
-                    # print('original label:', labels)
+
                     #   Convert to Tensor Image
-                    images, labels = self.toTensor(images,labels, device)
+                    images, labels = self.toTensor(images, labels, device)
+                    data_len += len(images)
                     # print('img;', images.shape)
                     #   Convert Tensor Type
                     #   for Cross Entropy Loss
                     labels = labels.type(torch.LongTensor)
                     labels = labels.to(device)
-                    # print('@@@@@@@labels', labels)
                     # if labels[0].to('cpu').numpy() != 0:
                     #     print('in@@@')
                     #     img = images.to('cpu').permute(0, 2, 3, 1)
                     #     print(img.shape)
                     #     plt.imshow(img[0])
                     #     plt.show()
-                    cls_loss = self.backbone(images, labels)
+                    self.optimizer.zero_grad()
+                    cls_score = self.backbone(images)
+                    cls_loss = self.criterion(cls_score, labels)
+                    _, preds = torch.max(cls_score.data, 1)
 
+                    running_corrects += torch.sum(preds == labels.data)
+                    running_loss += cls_loss.item()
                     if not torch.isfinite(cls_loss):
-                        print('WARNING: non-finite loss, ending training :  ',epoch)
+                        print('WARNING: non-finite loss, ending training :  ', epoch)
                         exit(1)
 
                     if epoch % 3 == 0:
                         print('cls_loss : ', cls_loss, 'labels : ', labels)
 
+                    self.running_loss += cls_loss.item()
+                    if self.epoch_standard % 100 == 0:
+                        print(f'@@@@[Training {self.epoch_standard} : {self.running_loss / 100}')
+                        self.final_loss_list.append(self.running_loss)
+                        self.running_loss = 0.0
+
                     # writer.add_scalar('Cls_Loss',cls_loss, epoch )
                     # cls_loss += cls_loss.item()
-                    self.optimizer.zero_grad
                     cls_loss.backward()
                     self.optimizer.step()
-
-                    torch.save({
-                        'model_state_dict': self.backbone.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict(),
-                        'loss': cls_loss,
-                        'epoch': epoch,
-                        },self.pt_name)
-
+                    self.epoch_standard += 1
+                    # torch.save(
+                    #     self.backbone.state_dict()
+                    #     , self.pt_name)
+            if data_len != 0:
+                print(f"loss : {running_loss / data_len}, Acc: {running_corrects / data_len}")
 
 if __name__ == '__main__':
     kitti = kitti_set(cfg.SRCPATH, 'train')
