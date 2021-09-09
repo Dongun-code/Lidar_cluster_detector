@@ -5,14 +5,11 @@ from torch.nn import parameter
 from config import Config as cfg
 # from model.detection.engine import train_one_epoch, evaluate
 from Lidar_cluster_Rcnn import Lidar_cluster_Rcnn
-from model_test import modelTest
-from bbox_train import trainBBox
 import torch
-import numpy as np
 # from load_data.kitti_loader import kitti_set
 from load_data.kitti_loader_colab import kitti_set
 from train_one import train_one_epoch
-from model.utils import collate_fn 
+from model.utils import collate_fn
 from train_continue import Lidar_cluster_Rcnn_continue
 # from train_one import train_one_epoch
 # from torchsummary import summary
@@ -22,25 +19,27 @@ import gc
 import argparse
 import time
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 gc.collect()
 torch.cuda.empty_cache()
 # from torchvision.references.detection import engine
 writer = SummaryWriter()
-def get_gpu_prop(show=False):
 
+
+def get_gpu_prop(show=False):
     ngpus = torch.cuda.device_count()
-    
+
     properties = []
     for dev in range(ngpus):
         prop = torch.cuda.get_device_properties(dev)
         properties.append({
             "name": prop.name,
             "capability": [prop.major, prop.minor],
-            "total_momory": round(prop.total_memory / 1073741824, 2), # unit GB
+            "total_momory": round(prop.total_memory / 1073741824, 2),  # unit GB
             "sm_count": prop.multi_processor_count
         })
-       
+
     if show:
         print("cuda: {}".format(torch.cuda.is_available()))
         print("available GPU(s): {}".format(ngpus))
@@ -51,54 +50,40 @@ def get_gpu_prop(show=False):
 
 def main():
     device = torch.device("cuda")
-    if device.type == "cuda": 
+    if device.type == "cuda":
         get_gpu_prop(show=True)
     print("\ndevice: {}".format(device))
 
+    dataset_train = kitti_set(cfg.SRCPATH, 'train')
+    # print(dataset_train)
+    # for i in dataset_train:
+    #     print(i)
+    # d_train = tor ch.utils.data.DataLoader(dataset_train, batch_size=2,
+    #                                         shuffle=True, num_workers=0,
+    #                                         collate_fn=utils.collate_fn)
+    # d_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
+    #                                         shuffle=False, num_workers=0,
+    #                                         collate_fn=utils.collate_fn)
+    d_train = torch.utils.data.DataLoader(dataset_train, batch_size=1,
+                                          shuffle=False, num_workers=0,
+                                          collate_fn=collate_fn)  #
+
     momentum = 0.9
-    # lr_temp = 0.02 * 1 / 16
-    # lr_temp = 0.0001
     lr_temp = 0.0001
     weight_decay_ = 0.0001
-    # device = 'cuda'
-    print("Select Model Mode : 0 : train, 1: continue train, 2: bbox train 3: model test")
-    select_mode = int(input())
-    if select_mode == 0:
-        model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
-        mode = 'train'
-    elif select_mode == 1:
-        model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
-        mode = 'train'
-    elif select_mode == 2:
-        model = trainBBox(device, lr_temp, weight_decay_)
-        mode = 'train'
-    elif select_mode == 3:
-        model = modelTest(device, lr_temp, weight_decay_)
-        mode = 'test'
 
-
-    if select_mode < 3:
-        dataset = kitti_set(cfg.SRCPATH, 'training')
-    elif select_mode >=3:
-        dataset = kitti_set(cfg.SRCPATH, 'testing')
-
-    dataset = torch.utils.data.DataLoader(dataset, batch_size=1,
-                                            shuffle=False, num_workers=0,
-                                            collate_fn=collate_fn)      #
+    # model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
+    model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
 
     start_epoch = 0
-    end_epoch = 3
+    end_epoch = 1
 
     for epoch in range(start_epoch, end_epoch):
-        
         tm_1 = time.time()
         print((f"@@@[Epoch] : {epoch + 1}"))
         # train_one_epoch(model, optimizer, d_train, device, epoch)
-        train_one_epoch(model, dataset, device, epoch, mode)
+        train_one_epoch(model, d_train, device, epoch, writer)
         # print('model save')
-
-    final_loss = model.final_loss_list
-    np.save('./save_final_loss', final_loss)
 
 
 if __name__ == "__main__":
