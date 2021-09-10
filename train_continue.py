@@ -36,13 +36,14 @@ class Lidar_cluster_Rcnn_continue():
         self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
         self.backbone.load_state_dict(torch.load('./result/vgg16_model2021_9_9_15_12.pt'))
         # self.backbone = torch.load('./result/vgg16_model2021_9_9_15_12.pt')
+
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        params = [p for p in self.backbone.parameters() if p.requires_grad]
 
+        params = [p for p in self.backbone.parameters() if p.requires_grad]
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
@@ -52,7 +53,7 @@ class Lidar_cluster_Rcnn_continue():
                                                         gamma=0.1)
         now = time.localtime()
         self.criterion = nn.CrossEntropyLoss()
-        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}.pt"
+        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}.pt"
 
 
     def toTensor(self, images, labels, device):
@@ -83,11 +84,6 @@ class Lidar_cluster_Rcnn_continue():
             cate_loss[category] = 1e-6
             cate_loss[category+'_correct'] = 0
         return cate_loss
-
-
-
-
-
 
     # def val_function(self, images, labels, device, cal):
     #     images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)

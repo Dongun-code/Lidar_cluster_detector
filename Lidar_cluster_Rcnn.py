@@ -12,7 +12,6 @@ from config import Config as cfg
 from torchvision import transforms
 # from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
-import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
@@ -23,24 +22,26 @@ import time
 def collate_fn(batch):
     return zip(*batch)
 
-class Lidar_cluster_Rcnn():
+class Lidar_cluster_Rcnn_continue():
     def __init__(self, device, lr_temp, weight_decay_) -> None:
         super().__init__()
         print("is it start only one??")
         self.epoch_standard = 0
         self.running_loss = 0.0
         self.final_loss_list = []
+        self.cate_loss = self.cateLoss_initializer()
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
         self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
+
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        params = [p for p in self.backbone.parameters() if p.requires_grad]
 
+        params = [p for p in self.backbone.parameters() if p.requires_grad]
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
@@ -50,7 +51,7 @@ class Lidar_cluster_Rcnn():
                                                         gamma=0.1)
         now = time.localtime()
         self.criterion = nn.CrossEntropyLoss()
-        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}.pt"
+        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}.pt"
 
 
     def toTensor(self, images, labels, device):
@@ -64,6 +65,23 @@ class Lidar_cluster_Rcnn():
         class_num = len(cfg.Train_set.use_label) + 1
         onehot = F.one_hot(labels, num_classes=class_num).to(device)
         return onehot
+
+    def categoryLossViewer(self, preds, labels):
+        preds = preds.to('cpu').numpy()
+        labels = labels.to('cpu').numpy()
+        for pred, label in zip(preds, labels):
+            category = cfg.Train_set.index_to_label[str(label)]
+            self.cate_loss[category] += 1
+            if pred == label:
+                self.cate_loss[category+'_correct'] += 1
+        # print(self.cate_loss)
+
+    def cateLoss_initializer(self):
+        cate_loss = {}
+        for category in cfg.Train_set.label_index.keys():
+            cate_loss[category] = 1e-6
+            cate_loss[category+'_correct'] = 0
+        return cate_loss
 
     # def val_function(self, images, labels, device, cal):
     #     images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
@@ -119,6 +137,7 @@ class Lidar_cluster_Rcnn():
 
                     running_corrects += torch.sum(preds == labels.data)
                     running_loss += cls_loss.item()
+                    self.categoryLossViewer(preds, labels.data)
                     if not torch.isfinite(cls_loss):
                         print('WARNING: non-finite loss, ending training :  ', epoch)
                         exit(1)
@@ -137,11 +156,17 @@ class Lidar_cluster_Rcnn():
                     cls_loss.backward()
                     self.optimizer.step()
                     self.epoch_standard += 1
-                    # torch.save(
-                    #     self.backbone.state_dict()
-                    #     , self.pt_name)
+            torch.save(
+                self.backbone
+                , self.pt_name)
             if data_len != 0:
                 print(f"loss : {running_loss / data_len}, Acc: {running_corrects / data_len}")
+                print(f"Cate loss : \n",
+                      f"Background : {self.cate_loss['Background_correct'] / self.cate_loss['Background']} \n"
+                      f"Car : {self.cate_loss['Car_correct'] / self.cate_loss['Car']} \n"
+                      f"Pedistrian : {self.cate_loss['Pedestrian_correct'] / self.cate_loss['Pedestrian']}  \n"
+                      f"Truck : {self.cate_loss['Truck_correct'] / self.cate_loss['Truck']} \n"
+                      f"Cyclist : {self.cate_loss['Cyclist_correct'] / self.cate_loss['Cyclist']}")
 
 if __name__ == '__main__':
     kitti = kitti_set(cfg.SRCPATH, 'train')
