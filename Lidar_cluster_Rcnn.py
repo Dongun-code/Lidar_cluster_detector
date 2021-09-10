@@ -60,11 +60,11 @@ class Lidar_cluster_Rcnn_continue():
 
         return img, label
 
-    def one_hot_endcoding(self, labels, device):
-        labels = labels.type(torch.LongTensor)
-        class_num = len(cfg.Train_set.use_label) + 1
-        onehot = F.one_hot(labels, num_classes=class_num).to(device)
-        return onehot
+    # def one_hot_endcoding(self, labels, device):
+    #     labels = labels.type(torch.LongTensor)
+    #     class_num = len(cfg.Train_set.use_label) + 1
+    #     onehot = F.one_hot(labels, num_classes=class_num).to(device)
+    #     return onehot
 
     def categoryLossViewer(self, preds, labels):
         preds = preds.to('cpu').numpy()

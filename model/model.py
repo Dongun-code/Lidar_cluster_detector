@@ -1,3 +1,5 @@
+from numpy.core.fromnumeric import shape
+
 from torch.nn.modules.container import Sequential
 import torchvision
 import torch.nn as nn
@@ -22,13 +24,7 @@ class VGG16_bn(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classfication(x)
         cls_score = self.class_score(x)
-
-        # target = torch.LongTensor([0]).to(labels.device)
-        cls_loss = self.loss_function(cls_score, labels)
-        # print('cls_loss : ', cls_loss)
-
-
-        return cls_loss
+        return cls_score
 
 if __name__ == '__main__':
     vgg = VGG16_bn()

@@ -28,26 +28,22 @@ class modelTest():
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
-        self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
-        checkpoint = torch.load('./result/vgg16_model_bbox_regressor_2021_9_8_26_14')
+        # self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
+        self.backbone = torch.load('./result/vgg16_model2021_9_9_15_12.pt')
+        self.backbone.eval()
         self.transform = transforms.Compose([
-            # transforms.Resize((224, 224)),
-            # transforms.ToTensor(),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
         params = [p for p in self.backbone.parameters() if p.requires_grad]
-        # print(params)
-        # print("parameter : ", params)
         self.optimizer = torch.optim.Adam(
             params, lr=lr_temp, weight_decay=weight_decay_
         )
-        self.backbone.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         now = time.localtime()
-        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_hour}_{now.tm_min}"
-        # model.train()
-        # self.bbox_regressor = bbox_regressor().to(device)
+        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}.pt"
+
 
     def toTensor(self, images, labels, device):
         img = torch.stack(images).to(device)
@@ -64,19 +60,15 @@ class modelTest():
     # def forward(self, images, lidar, targets=None, cal=None, device=None, optimizer=None):
     def __call__(self, images, lidar, targets=None, cal=None, device=None, mode='train'):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
-        images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
+        images_, pred_bboxes_, check = self.lidar(images, lidar, targets, cal)
         # print('check ? : ', check)
 
-        if check > 3 or len(images) != 0:
-            if mode == 'train':
-                self.backbone.train()
-            elif mode == 'test':
-                self.backbone.eval()
+        if len(images_) != 0:
 
-            images, labels, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
+            images, labels, bbox_dataset, label_len = self.cls_bbox(images_, pred_bboxes_, targets, device)
             select_region = Propose_region(images, labels, self.transform)
             if len(select_region) != 0:
-                dataset = torch.utils.data.DataLoader(select_region, batch_size=6,
+                dataset = torch.utils.data.DataLoader(select_region, batch_size=1,
                                                       shuffle=True, num_workers=0,
                                                       collate_fn=collate_fn)
                 # self.lr_scheduler.step()
@@ -85,13 +77,15 @@ class modelTest():
                     if label_len == 1:
                         print('@@@@@@@@@@@@@ only one!')
                         continue
-                    self.backbone.eval()
 
                     images, labels = self.toTensor(images, labels, device)
                     labels = labels.type(torch.LongTensor)
                     labels = labels.to(device)
 
-                    cls_loss = self.backbone(images)
+                    cls_score = self.backbone(images)
+                    _, preds = torch.max(cls_score.data, 1)
+                    print("Cls score : ", cls_score)
+                    print("Predicted Class : ", preds)
 
 
 
