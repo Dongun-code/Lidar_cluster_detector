@@ -35,8 +35,8 @@ class Lidar_cluster_Rcnn():
         self.label_num = len(cfg.Train_set.use_label)
         self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
         self.transform = transforms.Compose([
-            # transforms.Resize((224, 224)),
-            # transforms.ToTensor(),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
         params = [p for p in self.backbone.parameters() if p.requires_grad]
@@ -44,17 +44,14 @@ class Lidar_cluster_Rcnn():
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
-        # optimizer = torch.optim.Adadelta(
-        #     params, lr=lr_temp, weight_decay= weight_decay_
-        # )    
+
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer,
                                                         step_size=3,
                                                         gamma=0.1)
         now = time.localtime()
         self.criterion = nn.CrossEntropyLoss()
         self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}.pt"
-        # model.train()        
-        # self.bbox_regressor = bbox_regressor().to(device)
+
 
     def toTensor(self, images, labels, device):
         img = torch.stack(images).to(device)
