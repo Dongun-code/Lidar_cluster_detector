@@ -1,3 +1,5 @@
+import torchvision.transforms.functional
+
 from cluster_part import LidarCluster
 from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
@@ -6,6 +8,7 @@ from model.model import VGG16_bn
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
 from torchvision import transforms
+from torchvision.transforms.functional import to_pil_image
 # from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -28,8 +31,7 @@ class modelTest():
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
-        # self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
-        self.backbone = torch.load('./result/vgg16_model2021_9_9_15_12.pt')
+        self.backbone = torch.load('./result/vgg16_model2021_9_10_0_20.pt').to(device)
         self.backbone.eval()
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -84,10 +86,13 @@ class modelTest():
 
                     cls_score = self.backbone(images)
                     _, preds = torch.max(cls_score.data, 1)
-                    print("Cls score : ", cls_score)
+                    print("Cls score : ", cls_score.to('cpu'))
                     print("Predicted Class : ", preds)
-
-
+                    # img = images.to('cpu')
+                    # img = img[0].permute(1, 2, 0)
+                    # # pil_img = to_pil_image(img)
+                    # plt.imshow(img)
+                    # plt.show()
 
 
 

@@ -5,7 +5,7 @@ from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn
-from model.bbox_regressor import bbox_regressor
+# from model.bbox_regressor import bbox_regressor
 from bbox_utils import convert_xyxy_to_xywh
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
@@ -22,7 +22,7 @@ import time
 def collate_fn(batch):
     return zip(*batch)
 
-class Lidar_cluster_Rcnn_continue():
+class Lidar_cluster_Rcnn():
     def __init__(self, device, lr_temp, weight_decay_) -> None:
         super().__init__()
         print("is it start only one??")

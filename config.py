@@ -3,7 +3,7 @@ import numpy as np
 
 class Config:
     # SRCPATH = '/media/milab/My Passport3/toV100/dongun/Experiment_1/total_data'
-    SRCPATH = '/home/user/hdd/datasets/kitti'
+    SRCPATH = '/home/user/hdd/dataset/kitti'
     # A2D2 = '/media/milab/My Passport3/toV100/A2D2/camera_lidar/20180810_150607'
     # A2IMG = op.join(A2D2,'camera')
     # A2LD = op.join(A2D2,'lidar', 'cam_front_center')

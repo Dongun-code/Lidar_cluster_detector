@@ -11,6 +11,7 @@ from load_data.kitti_loader_colab import kitti_set
 from train_one import train_one_epoch
 from model.utils import collate_fn
 from train_continue import Lidar_cluster_Rcnn_continue
+from model_test import modelTest
 # from train_one import train_one_epoch
 # from torchsummary import summary
 
@@ -73,7 +74,8 @@ def main():
     weight_decay_ = 0.0001
 
     # model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
-    model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
+    # model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
+    model = modelTest(device, lr_temp, weight_decay_)
 
     start_epoch = 0
     end_epoch = 1
