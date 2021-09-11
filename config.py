@@ -38,4 +38,5 @@ class Config:
         use_label = ['Car', 'Pedestrian','Truck', 'Cyclist']
         label_index = {'Background': 0, 'Car': 1, 'Pedestrian': 2, 'Truck':3, 'Cyclist':4}
         index_to_label = {'0': 'Background', '1': 'Car', '2': 'Pedestrian', '3': 'Truck', '4': 'Cyclist'}
+        label_list = ['Background', 'Car', 'Pedestrian', 'Truck', 'Cyclist']
         mini_batch_size = 30

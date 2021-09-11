@@ -6,7 +6,7 @@ from bbox_utils import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn
 # from model.bbox_regressor import bbox_regressor
-# from bbox_utils import convert_xyxy_to_xywh
+from bbox_utils import convert_xyxy_to_xywh
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
 from torchvision import transforms

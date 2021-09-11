@@ -7,11 +7,11 @@ from config import Config as cfg
 from Lidar_cluster_Rcnn import Lidar_cluster_Rcnn
 import torch
 # from load_data.kitti_loader import kitti_set
-from load_data.kitti_loader_colab import kitti_set
+from load_data.kitti_loader_v100 import kitti_set
 from train_one import train_one_epoch
 from model.utils import collate_fn
-from train_continue import Lidar_cluster_Rcnn_continue
 from model_test import modelTest
+from train_continue import Lidar_cluster_Rcnn_continue
 # from train_one import train_one_epoch
 # from torchsummary import summary
 
@@ -55,7 +55,7 @@ def main():
         get_gpu_prop(show=True)
     print("\ndevice: {}".format(device))
 
-    dataset_train = kitti_set(cfg.SRCPATH, 'train')
+    dataset = kitti_set(cfg.SRCPATH, 'testing')
     # print(dataset_train)
     # for i in dataset_train:
     #     print(i)
@@ -65,7 +65,7 @@ def main():
     # d_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
     #                                         shuffle=False, num_workers=0,
     #                                         collate_fn=utils.collate_fn)
-    d_train = torch.utils.data.DataLoader(dataset_train, batch_size=1,
+    d_train = torch.utils.data.DataLoader(dataset, batch_size=1,
                                           shuffle=False, num_workers=0,
                                           collate_fn=collate_fn)  #
 

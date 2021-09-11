@@ -5,7 +5,7 @@ from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 
 from model.model import VGG16_bn
-from load_data.proposal_region import Propose_region
+from load_data.propose_region_test import Propose_region_test
 from config import Config as cfg
 from torchvision import transforms
 from torchvision.transforms.functional import to_pil_image
@@ -16,7 +16,8 @@ import numpy as np
 import torch.nn.functional as F
 import torch
 import time
-
+import copy
+import cv2
 
 # writer = SummaryWriter('./result/log')
 
@@ -62,32 +63,50 @@ class modelTest():
     # def forward(self, images, lidar, targets=None, cal=None, device=None, optimizer=None):
     def __call__(self, images, lidar, targets=None, cal=None, device=None, mode='train'):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
+        image_orig = copy.deepcopy(images)
+        image_orig = np.array(image_orig)
         images_, pred_bboxes_, check = self.lidar(images, lidar, targets, cal)
+        class_list = []
+        bbox_list = []
+        all_list = []
         # print('check ? : ', check)
 
         if len(images_) != 0:
-
-            images, labels, bbox_dataset, label_len = self.cls_bbox(images_, pred_bboxes_, targets, device)
-            select_region = Propose_region(images, labels, self.transform)
+            # images, labels, bbox_dataset, label_len = self.cls_bbox(images_, pred_bboxes_, targets, device)
+            select_region = Propose_region_test(images_, pred_bboxes_, self.transform)
             if len(select_region) != 0:
                 dataset = torch.utils.data.DataLoader(select_region, batch_size=1,
-                                                      shuffle=True, num_workers=0,
+                                                      shuffle=False, num_workers=0,
                                                       collate_fn=collate_fn)
-                # self.lr_scheduler.step()
-                # print('lr_schedular:', )
-                for epoch, (images, labels) in enumerate(dataset):
-                    if label_len == 1:
-                        print('@@@@@@@@@@@@@ only one!')
-                        continue
 
-                    images, labels = self.toTensor(images, labels, device)
-                    labels = labels.type(torch.LongTensor)
-                    labels = labels.to(device)
+                for epoch, (images, bbox) in enumerate(dataset):
+                    # if label_len == 1:
+                    #     print('@@@@@@@@@@@@@ only one!')
+                    #     continue
 
-                    cls_score = self.backbone(images)
+                    # images, labels = self.toTensor(images, labels, device)
+                    # labels = labels.type(torch.LongTensor)
+                    # labels = labels.to(device)
+                    image = images[0].to(device)
+                    cls_score = self.backbone(image[None])
                     _, preds = torch.max(cls_score.data, 1)
-                    print("Cls score : ", cls_score.to('cpu'))
-                    print("Predicted Class : ", preds)
+                    # print("Cls score : ", cls_score.to('cpu'))
+                    # print("Predicted Class : ", preds)
+                    # all_list.append(preds)
+                    if preds != 0:
+                        class_list.append(preds.to('cpu').numpy())
+                        bbox_list.append(bbox)
+
+                for index in range(len(class_list)):
+                    cls = class_list[index]
+                    cls_name = cfg.Train_set.label_list[int(cls)]
+                    bbox = bbox_list[index]
+                    bbox = bbox[0][0]
+                    image_orig = cv2.rectangle(image_orig, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
+                    cv2.putText(image_orig, cls_name, (bbox[0], bbox[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 2)
+
+                plt.imshow(image_orig)
+                plt.show()
                     # img = images.to('cpu')
                     # img = img[0].permute(1, 2, 0)
                     # # pil_img = to_pil_image(img)
