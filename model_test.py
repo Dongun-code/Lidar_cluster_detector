@@ -9,6 +9,7 @@ from load_data.propose_region_test import Propose_region_test
 from config import Config as cfg
 from torchvision import transforms
 from torchvision.transforms.functional import to_pil_image
+from model.nms import NMS
 # from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -68,7 +69,7 @@ class modelTest():
         images_, pred_bboxes_, check = self.lidar(images, lidar, targets, cal)
         class_list = []
         bbox_list = []
-        all_list = []
+        confidence_list = []
         # print('check ? : ', check)
 
         if len(images_) != 0:
@@ -89,21 +90,28 @@ class modelTest():
                     # labels = labels.to(device)
                     image = images[0].to(device)
                     cls_score = self.backbone(image[None])
-                    _, preds = torch.max(cls_score.data, 1)
+                    softmax_result = F.softmax(cls_score, dim=1)
+                    # softmax_s = softmax_result.sum()
+                    confidence, preds = torch.max(softmax_result.data, 1)
                     # print("Cls score : ", cls_score.to('cpu'))
                     # print("Predicted Class : ", preds)
                     # all_list.append(preds)
+
                     if preds != 0:
                         class_list.append(preds.to('cpu').numpy())
                         bbox_list.append(bbox)
+                        confidence_list.append(confidence.to('cpu').numpy())
+                # Need NMS
+                if len(class_list) != 0:
+                    final_box, final_class = NMS(bbox_list, class_list, confidence_list, 0.7, 0.5)
 
-                for index in range(len(class_list)):
-                    cls = class_list[index]
-                    cls_name = cfg.Train_set.label_list[int(cls)]
-                    bbox = bbox_list[index]
-                    bbox = bbox[0][0]
-                    image_orig = cv2.rectangle(image_orig, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
-                    cv2.putText(image_orig, cls_name, (bbox[0], bbox[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 2)
+                    for index in range(len(final_box)):
+                        cls = final_class[index]
+                        cls_name = cfg.Train_set.label_list[int(cls)]
+                        bbox = final_box[index]
+                        bbox = bbox[0][0]
+                        image_orig = cv2.rectangle(image_orig, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
+                        cv2.putText(image_orig, cls_name, (bbox[0], bbox[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 2)
 
                 plt.imshow(image_orig)
                 plt.show()
