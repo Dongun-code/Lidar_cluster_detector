@@ -1,11 +1,12 @@
 from numpy.core.numeric import NaN
 from numpy.lib.type_check import imag
-from cluster_part import LidarCluster
+# from cluster_part import LidarCluster
+from new_cluster_part import LidarCluster
 from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn
-# from model.bbox_regressor import bbox_regressor
+from model.bbox_regressor import bbox_regressor
 from bbox_utils import convert_xyxy_to_xywh
 from load_data.proposal_region import Propose_region
 from config import Config as cfg
@@ -34,25 +35,28 @@ class Lidar_cluster_Rcnn():
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
         self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
-
+        # self.backbone = torch.load('./result/vgg16_model2021_9_9_15_12.pt')
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-
         params = [p for p in self.backbone.parameters() if p.requires_grad]
+
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
-
+        # optimizer = torch.optim.Adadelta(
+        #     params, lr=lr_temp, weight_decay= weight_decay_
+        # )
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer,
                                                         step_size=3,
                                                         gamma=0.1)
         now = time.localtime()
         self.criterion = nn.CrossEntropyLoss()
-        self.pt_name = f"./result/vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}.pt"
-
+        self.pt_name = f"./result/new_vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour}_{now.tm_min}.pt"
+        # model.train()
+        # self.bbox_regressor = bbox_regressor().to(device)
 
     def toTensor(self, images, labels, device):
         img = torch.stack(images).to(device)
@@ -60,11 +64,11 @@ class Lidar_cluster_Rcnn():
 
         return img, label
 
-    # def one_hot_endcoding(self, labels, device):
-    #     labels = labels.type(torch.LongTensor)
-    #     class_num = len(cfg.Train_set.use_label) + 1
-    #     onehot = F.one_hot(labels, num_classes=class_num).to(device)
-    #     return onehot
+    def one_hot_endcoding(self, labels, device):
+        labels = labels.type(torch.LongTensor)
+        class_num = len(cfg.Train_set.use_label) + 1
+        onehot = F.one_hot(labels, num_classes=class_num).to(device)
+        return onehot
 
     def categoryLossViewer(self, preds, labels):
         preds = preds.to('cpu').numpy()
@@ -82,6 +86,11 @@ class Lidar_cluster_Rcnn():
             cate_loss[category] = 1e-6
             cate_loss[category+'_correct'] = 0
         return cate_loss
+
+
+
+
+
 
     # def val_function(self, images, labels, device, cal):
     #     images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)

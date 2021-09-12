@@ -1,6 +1,7 @@
 import torchvision.transforms.functional
 
-from cluster_part import LidarCluster
+# from cluster_part import LidarCluster
+from new_cluster_part import LidarCluster
 from load_data.kitti_loader import kitti_set
 from bbox_utils import cls_bbox
 
@@ -81,6 +82,16 @@ class modelTest():
                                                       collate_fn=collate_fn)
 
                 for epoch, (images, bbox) in enumerate(dataset):
+                # for show predict bbox
+                #     for index in range(len(bbox)):
+                #         # cls = bbox[index]
+                #         # cls_name = cfg.Train_set.label_list[int(cls)]
+                #         bboxx = bbox[index]
+                #         bbox = bboxx[0]
+                #         image_orig = cv2.rectangle(image_orig, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
+                # plt.imshow(image_orig)
+                # plt.show()
+
                     # if label_len == 1:
                     #     print('@@@@@@@@@@@@@ only one!')
                     #     continue
@@ -111,7 +122,8 @@ class modelTest():
                         bbox = final_box[index]
                         bbox = bbox[0][0]
                         image_orig = cv2.rectangle(image_orig, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 3)
-                        cv2.putText(image_orig, cls_name, (bbox[0], bbox[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 2)
+                        cv2.putText(image_orig, cls_name, (bbox[0], bbox[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
+
 
                 plt.imshow(image_orig)
                 plt.show()
