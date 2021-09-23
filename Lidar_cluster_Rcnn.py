@@ -13,6 +13,7 @@ from load_data.proposal_region import Propose_region
 from save_param import write_options
 from config import Config as cfg
 from torchvision import transforms
+from model.data_augmentation import data_augmentation
 # from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -44,6 +45,9 @@ class Lidar_cluster_Rcnn():
         ])
         params = [p for p in self.backbone.parameters() if p.requires_grad]
 
+        # self.optimizer = torch.optim.Adam(
+        #     params, lr = lr_temp, weight_decay = weight_decay_
+        # )
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
@@ -96,7 +100,7 @@ class Lidar_cluster_Rcnn():
         images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
         # images_, labels_, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
         images_, labels_, true_len = self.cls_bbox(images, pred_bboxes, targets, device)
-
+        images_, labels_ = data_augmentation(images_, labels_, device)
         running_corrects = 0
         running_loss = 0.0
         data_len = 0
@@ -156,9 +160,9 @@ class Lidar_cluster_Rcnn():
                     cls_loss.backward()
                     self.optimizer.step()
                     self.epoch_standard += 1
-            torch.save(
-                self.backbone
-                , self.pt_name)
+            # torch.save(
+            #     self.backbone
+            #     , self.pt_name)
             if data_len != 0:
                 print(f"loss : {running_loss / data_len}, Acc: {running_corrects / data_len}")
                 print(f"Cate loss : \n",
