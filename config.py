@@ -15,27 +15,13 @@ class Config:
     LABELPATH = op.join(SRCPATH,'training','label_2')
     CALPATH = op.join(SRCPATH,'training', 'calib')
 
-    R_ = np.array(
-        [7.755449e-03, -9.999694e-01, -1.014303e-03 ,
-            2.294056e-03 ,1.032122e-03, -9.999968e-01,
-             9.999673e-01, 7.753097e-03, 2.301990e-03]).reshape((3, 3))
-    T_ = np.array([-7.275538e-03, -6.324057e-02, -2.670414e-01])
-    
-    RT = np.array(
-        [7.755449e-03, -9.999694e-01, -1.014303e-03 ,-7.275538e-03,
-            2.294056e-03 ,1.032122e-03, -9.999968e-01,-6.324057e-02,
-             9.999673e-01, 7.753097e-03, 2.301990e-03,-2.670414e-01,
-             0, 0,0 ,1]).reshape((4, 4))
-    
-    P = np.array([7.183351e+02, 0.000000e+00, 6.003891e+02,
-     0.000000e+00, 7.183351e+02, 1.815122e+02,
-      0.000000e+00, 0.000000e+00 ,1.000000e+00]).reshape((3, 3))
-
     class Lidar_set:
-        resize_list = [[-5,-20, 5, 20], [-20, 5, 20, 5],[-10,-10, 10,10], [-20,-20, 20,20], [-30,-30, 30,30]]
+        # resize_list = [[-5,-20, 5, 20], [-20, 5, 20, 5],[-10,-10, 10,10], [-20,-20, 20,20], [-30,-30, 30,30]]
+        # resize_list = [[0, 0, 0, 0], [-5,-20, 5, 20], [-20, 5, 20, 5],[-10,-10, 10,10], [-13, -13, 13, 13], [-20,-20, 20,20]]
+        resize_list = [[0, 0, 0, 0], [-13, -13, 13, 13], [-15, -15, 15, 15]]
 
     class Train_set:
-        use_label = ['Car', 'Pedestrian','Truck', 'Cyclist']
-        label_index = {'Background':0, 'Car':1, 'Pedestrian':2, 'Truck':3, 'Cyclist':4}
-        index_to_label = {'1': 'Car', '2':'Pedestrian', '3': 'Truck', '4':'Cyclist'}
-        mini_batch_size = 30
+        use_label = ['Car', 'Pedestrian', 'Truck']
+        label_index = {'Background': 0, 'Car': 1, 'Pedestrian': 2, 'Truck': 3}
+        index_to_label = {'0': 'Background', '1': 'Car', '2': 'Pedestrian', '3': 'Truck'}
+        mini_batch_size = 20

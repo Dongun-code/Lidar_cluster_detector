@@ -100,7 +100,8 @@ class cls_bbox:
                 true_labels.append(label)
 
         if len(true_images) != 0:    
-            negative_len = len(true_images) * 3
+            # negative_len = len(true_images) * 3
+            negative_len = len(true_images) * 7
         else:
             negative_len = 10
 

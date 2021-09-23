@@ -2,17 +2,11 @@ import torch
 
 
 def train_one_epoch(model, data_loader, device, epoch, writer):
-    # for p in optimizer.param_groups:
-        # p['lr'] - 
-    # print('train one epoch!')
-    # end_epoch = 1300
     start = 1419
-    # for i in range(1,4):
-    #     print(i)
-    #
+
     for i, (images, lidar, targets, cal) in enumerate(data_loader):
-        if i < 432:
-            continue
+        # if i < 1000:
+        #     continue
         # print('error?!!!!!!!!!!!!!!!!!')
         print("@@@@@@@@@[Epoch] : ", i)
 

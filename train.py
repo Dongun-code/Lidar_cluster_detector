@@ -11,6 +11,7 @@ from load_data.kitti_loader_colab import kitti_set
 from train_one import train_one_epoch
 from model.utils import collate_fn 
 from train_continue import Lidar_cluster_Rcnn_continue
+# from model_test import modelTest
 # from train_one import train_one_epoch
 # from torchsummary import summary
 
@@ -68,29 +69,17 @@ def main():
 
 
     momentum = 0.9
-    # lr_temp = 0.02 * 1 / 16
-    # lr_temp = 0.0001
     lr_temp = 0.0001
     weight_decay_ = 0.0001
-    # device = 'cuda'
-    # model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_)
-    model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_)
-    # params = [p for p in model.parameters() if p.requires_grad]
-    # print(params)
-    # # print("parameter : ", params)
-    # optimizer = torch.optim.SGD(
-    #     params, lr=lr_temp, weight_decay= weight_decay_
-    # )
-    # # optimizer = torch.optim.Adadelta(
-    # #     params, lr=lr_temp, weight_decay= weight_decay_
-    # # )    
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-    #                                                 step_size=3,
-    #                                                 gamma=0.1)
-    # model.train()
 
     start_epoch = 0
-    end_epoch = 1
+    end_epoch = 4
+
+    model = Lidar_cluster_Rcnn(device, lr_temp, weight_decay_, end_epoch)
+    # model = Lidar_cluster_Rcnn_continue(device, lr_temp, weight_decay_, end_epoch)
+    # model = modelTest(device, lr_temp, weight_decay_)
+
+
 
     for epoch in range(start_epoch, end_epoch):
         
