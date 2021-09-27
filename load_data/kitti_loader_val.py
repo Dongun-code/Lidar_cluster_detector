@@ -2,7 +2,7 @@ import os.path as op
 import sys
 
 # from numpy.lib.type_check import imag
-sys.path.append("..")
+sys.path.append("../..")
 from config import Config as cfg
 from PIL import Image
 from torchvision import transforms
@@ -65,6 +65,8 @@ class kitti_set(torch.utils.data.Dataset):
         return file
 
     def __getitem__(self, idx):
+        idx = idx+6981
+        idx_name = '{0:06d}'.format(idx)
         label_file = '{0:06d}.txt'.format(idx)
         lidar_file = '{0:06d}.bin'.format(idx)
         img_file = '{0:06d}.png'.format(idx)
@@ -87,7 +89,7 @@ class kitti_set(torch.utils.data.Dataset):
         category = torch.tensor(category, dtype=torch.float32)
         targets = dict(bboxes=bboxes, category=category)
 
-        return img, lidar, targets, cal
+        return img, lidar, targets, cal, idx_name
 
     def __len__(self):
         return len(self.file_list)

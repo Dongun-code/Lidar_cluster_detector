@@ -122,10 +122,10 @@ class LidarCluster:
         # pcd = pcd.voxel_down_sample(voxel_size=0.2)
         pcd.paint_uniform_color([0.5, 0.5, 0.5])
 
-        with o3d.utility.VerbosityContextManager(
-                o3d.utility.VerbosityLevel.Debug) as cm:
+        # with o3d.utility.VerbosityContextManager(
+        #         o3d.utility.VerbosityLevel.Debug) as cm:
             # print('cluster: ',len(pcd.cluster_dbscan(eps=eps_, min_points=m_points)))
-            labels = np.array(
+        labels = np.array(
                 pcd.cluster_dbscan(eps=eps_, min_points=m_points, print_progress=False))
 
         max_label = labels.max()

@@ -1,15 +1,19 @@
 from numpy.core.numeric import NaN
 from numpy.lib.type_check import imag
+# from cluster_part import LidarCluster
 from new_cluster_part import LidarCluster
 from load_data.kitti_loader import kitti_set
-from bbox_utils import cls_bbox
+# from bbox_utils import cls_bbox
+from new_box_util import cls_bbox
 from config import Config as cfg
 from model.model import VGG16_bn, ResNet34
 from model.bbox_regressor import bbox_regressor
 from bbox_utils import convert_xyxy_to_xywh
 from load_data.proposal_region import Propose_region
+from save_param import write_options
 from config import Config as cfg
 from torchvision import transforms
+from model.data_augmentation import data_augmentation
 # from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -23,7 +27,7 @@ def collate_fn(batch):
     return zip(*batch)
 
 class Lidar_cluster_Rcnn_continue():
-    def __init__(self, device, lr_temp, weight_decay_) -> None:
+    def __init__(self, device, lr_temp, weight_decay_, end_epoch) -> None:
         super().__init__()
         print("is it start only one??")
         self.epoch_standard = 0
@@ -33,10 +37,7 @@ class Lidar_cluster_Rcnn_continue():
         self.lidar = LidarCluster()
         self.cls_bbox = cls_bbox(cfg.Train_set.use_label)
         self.label_num = len(cfg.Train_set.use_label)
-        # self.backbone = VGG16_bn(cfg.Train_set.use_label).to(device)
-        # self.backbone.load_state_dict(torch.load('./result/vgg16_model2021_9_9_15_12.pt'))
-        # self.backbone = torch.load('./result/resnet34_model2021_9_16_23_0.pt').to(device)
-        self.backbone = torch.load('./result/newvgg16_model2021_9_16_30_58.pt').to(device)
+        self.backbone = torch.load('./result/new_resnet_model2021_9_24_23_27.pt').to(device)
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -44,26 +45,28 @@ class Lidar_cluster_Rcnn_continue():
         ])
         params = [p for p in self.backbone.parameters() if p.requires_grad]
 
+        # self.optimizer = torch.optim.Adam(
+        #     params, lr = lr_temp, weight_decay = weight_decay_
+        # )
         self.optimizer = torch.optim.Adam(
             params, lr = lr_temp, weight_decay = weight_decay_
         )
-        # optimizer = torch.optim.Adadelta(
-        #     params, lr=lr_temp, weight_decay= weight_decay_
-        # )
+
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer,
                                                         step_size=3,
                                                         gamma=0.1)
         now = time.localtime()
         self.criterion = nn.CrossEntropyLoss()
-        self.pt_name = f"./result/new_continue_vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}.pt"
-        # model.train()
-        # self.bbox_regressor = bbox_regressor().to(device)
+        file_name = f"./result/new_vgg16_model{now.tm_year}_{now.tm_mon}_{now.tm_mday}_{now.tm_hour+9}_{now.tm_min}"
+        self.pt_name = file_name+'.pt'
+        write_options(file_name, 'Adam', lr_temp, weight_decay_, end_epoch, False)
+
 
     def toTensor(self, images, labels, device):
         img = torch.stack(images).to(device)
-        label = torch.stack(labels)
+        labels_tensor = torch.stack(labels)
 
-        return img, label
+        return img, labels_tensor
 
     def one_hot_endcoding(self, labels, device):
         labels = labels.type(torch.LongTensor)
@@ -89,25 +92,12 @@ class Lidar_cluster_Rcnn_continue():
         return cate_loss
 
 
-
-
-
-
-    # def val_function(self, images, labels, device, cal):
-    #     images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
-    #     # print('check ? : ', check)
-    #     images, labels, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
-    #     with torch.no_grad():
-    #         val_loss = 0.0
-    #
-    #     val_loss = self.backbone(images, labels)
-    #     print("[Val loss] : ", val_loss)
-
-    # def forward(self, images, lidar, targets=None, cal=None, device=None, optimizer=None):
     def __call__(self, images, lidar, targets=None, cal=None, device=None):
         # images, pred_bboxes = self.lidar(images,lidar, targets, cal)
-        images, pred_bboxes, check = self.lidar(images,lidar, targets, cal)
-        images_, labels_, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
+        images, pred_bboxes, check = self.lidar(images, lidar, targets, cal)
+        # images_, labels_, bbox_dataset, label_len = self.cls_bbox(images, pred_bboxes, targets, device)
+        images_, labels_, true_len = self.cls_bbox(images, pred_bboxes, targets, device)
+        images_, labels_ = data_augmentation(images_, labels_, device)
         running_corrects = 0
         running_loss = 0.0
         data_len = 0
@@ -117,11 +107,11 @@ class Lidar_cluster_Rcnn_continue():
                 dataset = torch.utils.data.DataLoader(select_region, batch_size=8,
                                                         shuffle=True, num_workers=0,
                                                         collate_fn=collate_fn)
-
-                data_size = len(dataset)
-                # self.lr_scheduler.step()
+        #
+        #         data_size = len(dataset)
+        #         # self.lr_scheduler.step()
                 for epoch, (images, labels) in enumerate(dataset):
-                    if label_len == 1 :
+                    if true_len == 0 :
                         print('@@@@@@@@@@@@@ only one!')
                         continue
                     self.backbone.train()
@@ -132,8 +122,8 @@ class Lidar_cluster_Rcnn_continue():
                     # print('img;', images.shape)
                     #   Convert Tensor Type
                     #   for Cross Entropy Loss
-                    labels = labels.type(torch.LongTensor)
-                    labels = labels.to(device)
+                    # labels = labels.type(torch.LongTensor)
+                    # labels = labels.to(device)
                     # if labels[0].to('cpu').numpy() != 0:
                     #     print('in@@@')
                     #     img = images.to('cpu').permute(0, 2, 3, 1)
@@ -142,6 +132,7 @@ class Lidar_cluster_Rcnn_continue():
                     #     plt.show()
                     self.optimizer.zero_grad()
                     cls_score = self.backbone(images)
+
                     cls_loss = self.criterion(cls_score, labels)
                     _, preds = torch.max(cls_score.data, 1)
 
@@ -176,7 +167,6 @@ class Lidar_cluster_Rcnn_continue():
                       f"Car : {self.cate_loss['Car_correct'] / self.cate_loss['Car']} \n"
                       f"Pedistrian : {self.cate_loss['Pedestrian_correct'] / self.cate_loss['Pedestrian']}  \n"
                       f"Truck : {self.cate_loss['Truck_correct'] / self.cate_loss['Truck']} \n")
-
 
 if __name__ == '__main__':
     kitti = kitti_set(cfg.SRCPATH, 'train')

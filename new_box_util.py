@@ -129,7 +129,7 @@ class cls_bbox:
         True_indices = torch.where(sorted_iou >= 0.5)
         Negative_indices = torch.where(sorted_iou < 0.5)
         True_ious_len = len(True_indices[0])
-        Negative_len = True_ious_len*8
+        Negative_len = True_ious_len*6
 
         Negative_indices = Negative_indices[0][:Negative_len]
 
